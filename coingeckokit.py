@@ -34,13 +34,13 @@ def getCoinGeckoMarket (symbols, forceLower = True):
     for i in range(len(ids)):
         try:
             data = cg.get_coin_market_chart_by_id(ids[i],'usd',5000)
-            df = pd.DataFrame(data['prices'],columns=['date','price'])
-            df['symbol']=symbols[i]
-            df['date']=pd.to_datetime(df['date']*1000000)
-            dfMktCap = pd.DataFrame(data['market_caps'], columns=['date','market_cap'])
-            df['market_cap']=dfMktCap['market_cap']
-            dfTotVol = pd.DataFrame(data['total_volumes'], columns=['date','total_volume'])
-            df['total_volume'] = dfTotVol['total_volume']
+            df = pd.DataFrame(data['prices'],columns=['Date','Price'])[:-1]
+            df['Symbol']=symbols[i]
+            df['Date']=pd.to_datetime(df['Date']*1000000)
+            dfMktCap = pd.DataFrame(data['market_caps'], columns=['Date','Market_Cap'])[:-1]
+            df['Market_Cap']=dfMktCap['Market_Cap']
+            dfTotVol = pd.DataFrame(data['total_volumes'], columns=['Date','Total_Volume'])[:-1]
+            df['Total_Volume'] = dfTotVol['Total_Volume']
             dfMarket=dfMarket.append(df,ignore_index=True)
         except ValueError:
             print (f"Invalid symbol: {symbols[i]}")
