@@ -16,28 +16,70 @@ def FullMergeDict(one, two):
   return { key:one.get(key,[])+two.get(key,[]) for key in set(list(one.keys())+list(two.keys())) }
 
 
-def getCoinGeckoId(symbols, forceLower = True):
+def getCoinGeckoId(symbols, forceUpper = False):
     # get CoinGeckoId from Coin symbol
     # set forceLower = False if don't want to get lower case of symbol
-
-    ids = []
+    file = './data/valid-symbol-id.json'
+    if os.path.isfile(file):
+        with open (file,'r') as f:
+            symbolId = json.load(f)
+    calls = 0
+    ids = {}
     if type (symbols)!=list:
         symbols = [symbols]
     for symbol in symbols:
-        if forceLower:
-            symbol = symbol.lower()
-        try:
-            id = dfCoinsList[dfCoinsList['symbol']==symbol]['id'].iloc[0]
-            ids.append(id)
-        except ValueError:
-            ids.append(np.nan)
-        except IndexError:
-            ids.append(np.nan)
+        if forceUpper:
+            symbol = symbol.upper()
+#         try:
+#             id = dfCoinsList[dfCoinsList['symbol']==symbol]['id'].iloc[0]
+#            print ('length: ', symbol,len(dfCoinsList[dfCoinsList['symbol']==symbol]['id']))
+        if symbol in symbolId.keys():
+            ids[symbol]=symbolId[symbol]
+            print (f"loading {symbol}:{ids[symbol]}")
+            continue
+        allIds = dfCoinsList[dfCoinsList['symbol']==symbol]['id']
+        id = {symbol:""}
+        if len(allIds)>1:
+            highestMktCap = 0
+            for i in range(len(allIds)):
+                print (symbol,allIds.iloc[i])
+                try:
+                    data = cg.get_coin_market_chart_by_id(allIds.iloc[i],'usd',1,interval='daily')
+                    calls += 1
+                    print (calls)
+                    if calls >= 40:
+                        time.sleep(60)
+                        calls = 0
+                    if data['market_caps'][0][1]>highestMktCap:
+                        print (allIds.iloc[i])
+                        id[symbol] = allIds.iloc[i]
+#                         id["symbol"] = symbol
+                except ValueError:
+                    print ('ValueError')
+                    print (allIds.iloc[i])
+        elif len(allIds)==1:
+            try:
+                data = cg.get_coin_market_chart_by_id(allIds.iloc[0],'usd',1,interval='daily')
+                calls += 1
+                print (calls)
+                id[symbol] = allIds.iloc[0]
+#                 id["symbol"] = symbol
+            except ValueError:
+                print (allIds.iloc[0], "doesn't exist")
+        if id[symbol] != "":
+            ids[symbol]=id[symbol]
+            print (symbol,':', ids[symbol])
+#         except ValueError:
+#             ids.append(np.nan)
+#         except IndexError:
+#             ids.append(np.nan)
+    with open (file,'w') as f:
+        json.dump(ids,f) 
     return ids
 
-def getCoinGeckoMarket (symbols, modDays = 30, forceLower = True):
+def getCoinGeckoMarket (symbols, modDays = 30, forceUpper = True):
     dfMarket = pd.DataFrame()
-    ids = getCoinGeckoId(symbols, forceLower)
+    ids = getCoinGeckoId(symbols, forceUpper)
     direc = './data'
     if not os.path.isdir(direc):
         os.mkdir (direc)
@@ -53,7 +95,7 @@ def getCoinGeckoMarket (symbols, modDays = 30, forceLower = True):
             continue
 #         try:
 #             data = cg.get_coin_market_chart_by_id(ids[i],'usd',1)
-        file = './data/coingecko_coin_market_chart_by_ids_'+str(ids[i])+'.json'
+        file = './data/coingecko_coin_market_chart_by_ids_'+str(ids[i]["id"])+'.json'
 
         if os.path.isfile(file):
             modDate = os.path.getmtime(file)
@@ -62,7 +104,7 @@ def getCoinGeckoMarket (symbols, modDays = 30, forceLower = True):
                 print ('loading')
             if dt.datetime.now() - dt.datetime.fromtimestamp(modDate)>dt.timedelta(days=modDays):
                 daysOld = (dt.datetime.now()-dt.datetime.fromtimestamp(data['prices'][-1][0]/1000)).days
-                newData = cg.get_coin_market_chart_by_id(ids[i],'usd',daysOld,interval='daily')
+                newData = cg.get_coin_market_chart_by_id(ids[i]["id"],'usd',daysOld,interval='daily')
                 data = FullMergeDict(data,newData)
                 for k, v in data.items(): # remove last item
                     v.pop()
@@ -72,7 +114,7 @@ def getCoinGeckoMarket (symbols, modDays = 30, forceLower = True):
         else:
             try:
                 print(f"trying {symbols[i]}")
-                data = cg.get_coin_market_chart_by_id(ids[i],'usd',5000)
+                data = cg.get_coin_market_chart_by_id(ids[i]["id"],'usd',5000)
                 for k,v in data.items():
                     v.pop()
                 with open(file, 'w') as f:
@@ -153,6 +195,8 @@ def getCoinsList (modDays = 30):
 #                 print ('loading')
             return data
     data=cg.get_coins_list()
+    for i in range(len(data)):
+        data[i]['symbol']=data[i]['symbol'].upper()
     with open(file, 'w') as f:
         json.dump(data, f)
 #         print ('new file')
