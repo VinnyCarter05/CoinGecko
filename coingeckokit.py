@@ -129,7 +129,7 @@ def getCoinGeckoMarket (symbols, modDays = 30, forceUpper = True):
 
         df = pd.DataFrame(data['prices'],columns=['Date','Price'])
         df['Symbol']=symbol
-        df['Date']=pd.to_datetime(df['Date']*1000000)
+        df['Date']=pd.to_datetime(df['Date']*1000000).dt.floor(freq='d')
         dfMktCap = pd.DataFrame(data['market_caps'], columns=['Date','Market_Cap'])
         df['Market_Cap']=dfMktCap['Market_Cap']
         dfTotVol = pd.DataFrame(data['total_volumes'], columns=['Date','Total_Volume'])
