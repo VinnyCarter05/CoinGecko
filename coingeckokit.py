@@ -19,10 +19,12 @@ def FullMergeDict(one, two):
 def getCoinGeckoId(symbols, forceUpper = False):
     # get CoinGeckoId from Coin symbol
     # set forceLower = False if don't want to get lower case of symbol
-    file = './data/valid-symbol-id.json'
+    file = './data/coingecko-valid-symbol-id.json'
     if os.path.isfile(file):
         with open (file,'r') as f:
             symbolId = json.load(f)
+    else:
+        symbolId = {}
     calls = 0
     ids = {}
     if type (symbols)!=list:
@@ -35,7 +37,7 @@ def getCoinGeckoId(symbols, forceUpper = False):
 #            print ('length: ', symbol,len(dfCoinsList[dfCoinsList['symbol']==symbol]['id']))
         if symbol in symbolId.keys():
             ids[symbol]=symbolId[symbol]
-#             print (f"loading {symbol}:{ids[symbol]}")
+            print (f"loading {symbol}:{ids[symbol]}")
             continue
         allIds = dfCoinsList[dfCoinsList['symbol']==symbol]['id']
         id = {symbol:""}
@@ -68,7 +70,7 @@ def getCoinGeckoId(symbols, forceUpper = False):
                 print (allIds.iloc[0], "doesn't exist")
         if id[symbol] != "":
             ids[symbol]=id[symbol]
-#             print (symbol,':', ids[symbol])
+            print (symbol,':', ids[symbol])
 #         except ValueError:
 #             ids.append(np.nan)
 #         except IndexError:
@@ -83,8 +85,8 @@ def getCoinGeckoMarket (symbols, modDays = 30, forceUpper = True):
     direc = './data'
     if not os.path.isdir(direc):
         os.mkdir (direc)
-    if os.path.isfile('./data/invalid-symbols.json'):
-        with open('./data/invalid-symbols.json','r') as f:
+    if os.path.isfile('./data/coingecko-invalid-symbols.json'):
+        with open('./data/coingecko-invalid-symbols.json','r') as f:
             invalidSymbols=json.load(f)
     else:
         invalidSymbols={"Invalid_Symbols":[]}
@@ -139,7 +141,7 @@ def getCoinGeckoMarket (symbols, modDays = 30, forceUpper = True):
     print (invalidSymbols)
     print (type(invalidSymbols))
 
-    with open('./data/invalid-symbols.json','w') as f:
+    with open('./data/coingecko-invalid-symbols.json','w') as f:
             json.dump(invalidSymbols,f)
     return dfMarket
 
