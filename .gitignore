@@ -3,3 +3,5 @@
 cgenv/Lib/site-packages/certifi-2021.10.8.dist-info/INSTALLER
 cgenv/
 .ipynb_checkpoints/CoinGecko-checkpoint.ipynb
+.DS_Store
+.DS_Store
